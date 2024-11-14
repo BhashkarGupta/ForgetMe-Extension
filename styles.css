@@ -1,0 +1,492 @@
+* {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #f4f4f9;
+  color: #333;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 400px;
+  width: 455px;
+  margin: 0;
+  transition: background 0.3s, color 0.3s;
+  position: relative;
+}
+
+body.dark-mode {
+  background: #333;
+  color: #f4f4f9;
+}
+
+.container {
+  background: #fff;
+  padding: 10px;
+  width: 100%;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  margin: 0px;
+  transition: background 0.3s, border 0.3s;
+}
+
+.container.dark-mode {
+  background: #444;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+h2 {
+  text-align: right;
+  margin-bottom: 5px;
+  margin-top: 0.2rem;
+}
+
+label {
+  font-size: 15px;
+  color: #555;
+  display: flex;
+  justify-content: space-between;
+  margin: 12px 6px 3px 6px;
+}
+
+label.dark-mode {
+  color: #fff;
+}
+
+#generatedPassword.dark-mode {
+  color: #555;
+}
+
+input[type="text"],
+input[type="password"],
+input[type="number"] {
+  width: 96%;
+  padding: 7px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  transition: border-color 0.3s, background 0.3s;
+  margin: 3px 6px;
+}
+
+input[type="text"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus {
+  border-color: #4A90E2;
+  outline: none;
+}
+
+input[type="checkbox"] {
+  margin-right: 0.5rem;
+}
+
+input.dark-mode{
+  background-color: #333;
+  color: #ccc;
+}
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0.7rem 0;
+}
+
+.checkbox-group label {
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+}
+
+.button-group {
+  display: flex;
+  justify-content: space-between;
+  margin: 7px 0;
+}
+
+button {
+  background-color: #4A90E2;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  flex: 1 1 48%;
+  margin: 0.5rem;
+  min-width: 120px;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+button:hover {
+  background-color: #54bb35;
+  transform: translateY(-3px);
+}
+
+input:hover {
+  border-color: #54bb35;
+  transform: translateY(-1px);
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.result-container {
+  background: #eef;
+  padding: 10px 20px;
+  border-radius: 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.3s;
+  border: solid 2px #54bb35;
+}
+
+.result-container.dark-mode {
+  background: #555;
+}
+
+.advanced-options,
+.customize-options {
+  display: none;
+  margin-top: 1rem;
+  border: 2px solid #4A90E2;
+  border-radius: 6px;
+  padding: 0.75rem;
+}
+
+.result-container button {
+  margin-left: 1rem;
+  padding: 0.4rem 0.6rem;
+  flex: 0 0 auto;
+}
+
+.icon {
+  font-size: 18px;
+  cursor: pointer;
+  transition: transform 0.3s;
+  vertical-align: middle;
+  line-height: 1;
+  margin-right: 4px;
+}
+
+.icon.active {
+  transform: rotate(180deg);
+}
+
+.dark-mode-toggle {
+  display: flex;
+  justify-content: end;
+}
+
+.password-strength-container {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 3px 6px;
+}
+
+.password-strength {
+  font-size: 0.85rem;
+  margin: 5px 0;
+  align-self: flex-start;
+  transition: color 0.3s ease;
+}
+
+progress {
+  width: 97%;
+  height: 3px;
+  border-radius: 4px;
+  appearance: none;
+}
+
+progress::-webkit-progress-bar {
+  background-color: #eee;
+  border-radius: 4px;
+  transition: color 0.3s ease;
+}
+
+progress::-webkit-progress-value {
+  border-radius: 4px;
+}
+
+.progress-weak::-webkit-progress-value {
+  background-color: #e74c3c;
+}
+
+.progress-medium::-webkit-progress-value {
+  background-color: #f39c12;
+}
+
+.progress-strong::-webkit-progress-value {
+  background-color: #2ecc71;
+}
+
+.password-strength.weak {
+  color: #e74c3c;
+}
+
+.password-strength.medium {
+  color: #f39c12;
+}
+
+.password-strength.strong {
+  color: #2ecc71;
+}
+
+select {
+  width: 100%;
+  padding: 0.5rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+select.dark-mode{
+  background-color: #333;
+  color: #ccc;
+}
+
+.popup {
+  display: none;
+  position: fixed;
+  z-index: 1;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+}
+
+.popupMasterPassword {
+  z-index: 2;
+}
+
+ol>li {
+  margin-bottom: 0.5rem;
+}
+
+.saved-config-popup,
+.downloadConfig,
+.uploadConfig {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  border: 2px solid #54bb35;
+  min-width: 300px;
+  max-width: 550px;
+  border-radius: 8px;
+  color: #444;
+}
+
+.saved-config-popup.dark-mode,
+.downloadConfig.dark-mode,
+.uploadConfig.dark-mode {
+  background-color: #474747;
+  border: 2px solid #54bb35;
+  color: #ffffff;
+}
+
+.close {
+  color: #aaa;
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+  color: black;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.domainList {
+  max-width: 550px;
+  min-width: 300px;
+  margin: 20px auto;
+  margin-top: 0;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+#domainList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#domainList li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1px 10px;
+  margin: 5px 0;
+  border: 1px solid #54bb35;
+  border-radius: 6px;
+  transition: background-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+#domainList li:hover {
+  background-color: #f1f1f1;
+}
+
+#domainList li span {
+  font-weight: bold;
+  flex-grow: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.buttons-container {
+  display: flex;
+  gap: 10px;
+}
+
+.domainList-button {
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  min-width: 80px;
+  text-align: center;
+}
+
+.domainList-button:hover {
+  background-color: #007bff;
+  color: white;
+  transform: scale(1.05);
+}
+
+.domainList-button:active {
+  transform: scale(0.98);
+}
+
+.domainList-button.load {
+  background-color: #28a745;
+  color: white;
+}
+
+.domainList-button.delete {
+  background-color: #dc3545;
+  color: white;
+}
+
+.domainList-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+
+.hint-container {
+  position: relative;
+  display: inline-block;
+}
+
+.info-toggle {
+  border: none;
+  cursor: pointer;
+  min-width: fit-content;
+  margin: 0;
+  padding: 0;
+  size: 18px;
+}
+
+.info-box {
+  visibility: hidden;
+  position: absolute;
+  top: 40px; 
+  right: 0;
+  padding: 10px;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 200px;
+  font-size: 14px;
+  opacity: 0;
+  transition: opacity 0.3s ease, visibility 0s 0.3s;
+  z-index: 5;
+}
+
+.hint-container:hover .info-box {
+  visibility: visible;
+  opacity: 1;
+  transition: opacity 0.3s ease;
+}
+
+
+@media (max-width: 600px) {
+  body {
+      height: auto;
+  }
+
+  .result-container {
+      flex-direction: column;
+      align-items: stretch;
+      border: solid 2px #54bb35;
+      margin: 3px 6px;
+  }
+
+  .result-container button {
+      width: 100%;
+      margin-top: 0.5rem;
+      margin-left: 0;
+  }
+
+  .checkbox-group {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .checkbox-group label {
+      margin-bottom: 0.3rem;
+  }
+
+  /* .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      margin-top: 1rem;
+  } */
+
+  #generatedPassword {
+      margin: 7px 0;
+      font-size: 15px;
+      font-weight: bold;
+      text-align: center;
+  }
+
+  .domainList {
+      max-width: 100%;
+      padding: 5px;
+  }
+
+  #domainList li {
+      flex-direction: column;
+      align-items: flex-start;
+  }
+
+  .buttons-container {
+      width: 100%;
+      justify-content: flex-start;
+      margin-top: 5px;
+  }
+
+  .domainList-button {
+      min-width: 70px;
+      font-size: 12px;
+  }
+}

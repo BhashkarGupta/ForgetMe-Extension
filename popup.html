@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forget Me - Password Manager</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="dark-mode-toggle">
+            
+        </div>
+        <div class="header">
+            <h2>Forget Me Password Manager</h2>
+            <span id="darkModeToggle" class="material-icons icon">nightlight</span>
+        </div>
+
+        <!-- Password manager form -->
+        <form id="passwordManagerForm">
+            <!-- Master Password -->
+            <label for="masterPassword">
+                <span><span class="material-icons icon">lock</span> Master Password* :</span>
+                <div class="hint-container">
+                    <i class="material-icons icon">help</i>
+                    <div class="info-box howToPopup" id="passwordInfo">
+                        This is the master password or main password used to generate other passwords. It should be complex and kept secret.
+                    </div>
+                </div>
+            </label>
+            <input type="password" id="masterPassword" required>
+            <div class="password-strength-container">
+                <progress id="strengthProgress" value="0" max="100"></progress>
+                <div class="password-strength" id="passwordStrength">Strength: Weak</div>
+            </div>
+
+            <!-- Domain -->
+            <label for="domain">
+                <span><span class="material-icons icon">language</span> Domain* : (e.g., google.com)</span>
+                <div class="hint-container">
+                    <i class="material-icons icon">help</i>
+                    <div class="info-box howToPopup" id="domainInfo">
+                        Use the domain of the website or service to create a unique password.
+                    </div>
+                </div>
+            </label>
+            <input type="text" id="domain" required>
+
+            <!-- Optional Username -->
+            <label for="username">Username (optional):</label>
+            <input type="text" id="username">
+
+            <!-- Buttons for advanced options and password customization -->
+            <div class="button-group">
+                <button type="button" id="advancedOptionsToggle">
+                    <span class="material-icons icon">expand_more</span> Advanced Options
+                </button>
+                <button type="button" id="customizeOptionsToggle">
+                    <span class="material-icons icon">settings</span> Customize Password
+                </button>
+            </div>
+
+            <!-- Advanced Options (hidden by default) -->
+            <div class="advanced-options" id="advancedOptions" style="display: none;">
+            <label for="passwordLength">Password Length (4-40):</label>
+            <input type="number" id="passwordLength" min="4" max="40" value="16">
+                <label for="name">Last Name:</label>
+                <input type="text" id="name">
+                <label for="customString">Custom String:</label>
+                <input type="text" id="customString">
+                <label for="year">Year: (1950-2050):</label>
+                <input type="number" id="year" min="1950" max="2050" value="">
+                <label for="month">Month:</label>
+                <select id="month">
+                    <option value="" disabled selected>Select Month</option>
+                    <!-- Month options -->
+                    <option value="1">January</option>
+                    <option value="2">February</option>
+                    <option value="3">March</option>
+                    <option value="4">April</option>
+                    <option value="5">May</option>
+                    <option value="6">June</option>
+                    <option value="7">July</option>
+                    <option value="8">August</option>
+                    <option value="9">September</option>
+                    <option value="10">October</option>
+                    <option value="11">November</option>
+                    <option value="12">December</option>
+                </select>
+            </div>
+
+            <!-- Customize Password Options -->
+            <div class="customize-options" id="customizeOptions" style="display: none;">
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="enforceSelection" checked> Enforce Selection</label>
+                    <label><input type="checkbox" id="numbers" checked> Numbers</label>
+                    <label><input type="checkbox" id="lowercase" checked> Lowercase</label>
+                </div>
+                <div class="checkbox-group">
+                    <label><input type="checkbox" id="complexSymbols"> Complex Symbols</label>
+                    <label><input type="checkbox" id="uppercase" checked> Uppercase</label>
+                    <label><input type="checkbox" id="symbols" checked> Symbols</label>
+                </div>
+            </div>
+
+            <!-- Generated Password Display -->
+            <div class="result-container">
+                <span id="generatedPassword">Generated Password</span>
+                <button type="button" id="copyButton">
+                    <span class="material-icons icon">content_copy</span> Copy
+                </button>
+            </div>
+
+            <!-- Submit & Saved Configs Button -->
+            <div class="button-group">
+                <button type="submit">
+                    <span class="material-icons icon">vpn_key</span> Generate
+                </button>
+                <button id="saved-configs" type="button">
+                    <span class="material-icons icon">save</span> Saved Configs
+                </button>
+            </div>
+        </form>
+
+        <!-- Saved Configurations Popup -->
+        <div id="saved-config-popup" class="popup">
+            <div class="saved-config-popup">
+                <span class="close" id="saved-configs-close">&times;</span>
+                <h3>Previously Saved Configurations</h3>
+                <input type="text" id="searchInput" placeholder="Search domains..." />
+                <div class="domainList">
+                    <ul id="domainList"></ul>
+                </div>
+                <div class="button-group">
+                    <button id="openDownloadConfig">
+                        <span class="material-icons icon">save</span> Download Config
+                    </button>
+                    <button id="openUploadConfig">
+                        <span class="material-icons icon">folder_open</span> Upload Config
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Download Config Popup -->
+        <div id="downloadConfig" class="popup popupMasterPassword">
+            <div class="downloadConfig">
+                <span class="close" id="closeDownloadConfig">&times;</span>
+                <h3>Please Enter Your Master Password for Encryption</h3>
+                <form id="passwordManagerDownload">
+                    <label for="passwordDownload">
+                        <span class="material-icons icon">lock</span> Master Password* :
+                    </label>
+                    <input type="password" id="passwordDownload" required>
+                    <div class="button-group">
+                        <button type="submit" id="downloadConfigSubmit">
+                            <span class="material-icons icon">vpn_key</span> Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Upload Config Popup -->
+        <div id="uploadConfig" class="popup popupMasterPassword">
+            <div class="uploadConfig">
+                <span class="close" id="closeUploadConfig">&times;</span>
+                <h3>Please Enter Your Master Password for Encryption</h3>
+                <form id="passwordManagerUpload">
+                    <label for="passwordUpload">
+                        <span class="material-icons icon">lock</span> Master Password* :
+                    </label>
+                    <input type="password" id="passwordUpload" required>
+                    <input type="file" id="uploadFile" accept=".fmpm" required />
+                    <div class="button-group">
+                        <button type="submit" id="uploadConfigSubmit">
+                            <span class="material-icons icon">vpn_key</span> Submit
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+    </div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
