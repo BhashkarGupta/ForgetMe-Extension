@@ -147,13 +147,15 @@ function updatePasswordStrength(password) {
 }
 
 async function saveConfig(masterPassword) {
-    const encryptedConfigs = await encryptData(JSON.stringify([]), masterPassword); // empty config for now
-
-    const configBlob = new Blob([encryptedConfigs], { type: "application/json" });
-    const downloadLink = document.createElement("a");
-    downloadLink.href = URL.createObjectURL(configBlob);
-    downloadLink.download = "ForgetMe.fmpm";
-    downloadLink.click();
+    chrome.runtime.sendMessage({ action: 'getConfigs' }, async (response) => {
+        const existingConfigs = response.configs || [];
+        const encryptedConfigs = await encryptData(JSON.stringify(existingConfigs), masterPassword);
+        const configBlob = new Blob([encryptedConfigs], { type: "application/json" });
+        const downloadLink = document.createElement("a");
+        downloadLink.href = URL.createObjectURL(configBlob);
+        downloadLink.download = "ForgetMe.fmpm";
+        downloadLink.click();
+    });
 }
 
 async function uploadConfig(masterPassword) {
@@ -172,24 +174,32 @@ async function uploadConfig(masterPassword) {
         console.log("password:", masterPassword);
         console.log(encryptedData);
         const decryptedData = await decryptData(encryptedData, masterPassword);
-
-        // Sending decrypted data to background.js to save it
-        chrome.runtime.sendMessage({ action: 'saveConfig', data: JSON.parse(decryptedData) });
+        async function update(existingConfigs) {
+            await chrome.runtime.sendMessage({ action: 'saveConfigs', configs:existingConfigs });
+            displaySavedDomains();
+        }
+        update(JSON.parse(decryptedData));
     };
 
     // Reading the file as text
     reader.readAsText(file);
 }
 
+//Display Domains
+let currentPage = 0;  
+const itemsPerPage = 2;  
 function displaySavedDomains() {
     const domainList = document.getElementById('domainList');
-    domainList.innerHTML = ''; // Clear previous entries
+    domainList.innerHTML = '';
 
-    // Request saved configurations from background.js
     chrome.runtime.sendMessage({ action: 'getConfigs' }, (response) => {
         const existingConfigs = response.configs || [];
 
-        existingConfigs.forEach((config, index) => {
+        const startIndex = currentPage * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, existingConfigs.length);
+
+        for (let i = startIndex; i < endIndex; i++) {
+            const config = existingConfigs[i];
             const li = document.createElement('li');
             const domainName = document.createElement('span');
             domainName.textContent = config.domain;
@@ -201,27 +211,64 @@ function displaySavedDomains() {
             const loadButton = document.createElement('button');
             loadButton.textContent = "Load";
             loadButton.classList.add('domainList-button', 'load');
-            loadButton.onclick = () => loadConfig(index);
+            loadButton.onclick = () => loadConfig(i);
             buttonsContainer.appendChild(loadButton);
 
             const deleteButton = document.createElement('button');
             deleteButton.textContent = "Delete";
             deleteButton.classList.add('domainList-button', 'delete');
             deleteButton.onclick = (e) => {
-                e.stopPropagation(); // Prevent triggering loadConfig
-                deleteConfig(index);
+                e.stopPropagation(); 
+                deleteConfig(i);
             };
             buttonsContainer.appendChild(deleteButton);
 
             li.appendChild(buttonsContainer);
-            li.onclick = () => loadConfig(index);
+            li.onclick = () => loadConfig(i);
             domainList.appendChild(li);
-        });
+        }
+
+        const paginationContainer = document.createElement('div');
+        paginationContainer.classList.add('pagination-container');
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = "<";
+        prevButton.disabled = currentPage === 0; 
+        prevButton.onclick = () => {
+            if (currentPage > 0) {
+                currentPage--;
+                displaySavedDomains(); 
+            }
+        };
+        paginationContainer.appendChild(prevButton);
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = ">";
+        nextButton.disabled = endIndex >= existingConfigs.length;  
+        nextButton.onclick = () => {
+            if (endIndex < existingConfigs.length) {
+                currentPage++;
+                displaySavedDomains(); 
+            }
+        };
+        paginationContainer.appendChild(nextButton);
+
+        domainList.appendChild(paginationContainer);
     });
 }
 
+
 function deleteConfig(index) {
-    chrome.runtime.sendMessage({ action: 'deleteConfig', index });
+    console.log("delete Triggered");
+    chrome.runtime.sendMessage({action: 'getConfigs'}, (response) => {
+        const existingConfigs = response.configs || [];
+        existingConfigs.splice(index, 1);
+        async function update(existingConfigs) {
+            await chrome.runtime.sendMessage({action: 'saveConfigs', configs: existingConfigs});
+            displaySavedDomains();
+        }
+        update(existingConfigs);
+    });  
 }
 
 function loadConfig(index) {
@@ -251,47 +298,86 @@ function loadConfig(index) {
 }
 
 // Search functionality
+let searchPage = 0;
 document.getElementById('searchInput').addEventListener('input', (event) => {
     const searchTerm = event.target.value.toLowerCase();
     const domainList = document.getElementById('domainList');
 
-    // Request saved configurations from background.js
     chrome.runtime.sendMessage({ action: 'getConfigs' }, (response) => {
         const existingConfigs = response.configs || [];
 
-        domainList.innerHTML = ''; // Clear previous entries
-        existingConfigs.forEach((config, index) => {
-            if (config.domain.toLowerCase().includes(searchTerm)) {
-                const li = document.createElement('li');
-                const domainName = document.createElement('span');
-                domainName.textContent = config.domain;
-                li.appendChild(domainName);
+        const filteredConfigs = existingConfigs.filter(config => 
+            config.domain.toLowerCase().includes(searchTerm)
+        );
 
-                const buttonsContainer = document.createElement('div');
-                buttonsContainer.classList.add('buttons-container');
+        const itemsPerPage = 2;
+        const startIndex = searchPage * itemsPerPage;
+        const endIndex = Math.min(startIndex + itemsPerPage, filteredConfigs.length);
 
-                const loadButton = document.createElement('button');
-                loadButton.textContent = "Load";
-                loadButton.classList.add('domainList-button', 'load');
-                loadButton.onclick = () => loadConfig(index);
-                buttonsContainer.appendChild(loadButton);
+        domainList.innerHTML = ''; 
 
-                const deleteButton = document.createElement('button');
-                deleteButton.textContent = "Delete";
-                deleteButton.classList.add('domainList-button', 'delete');
-                deleteButton.onclick = (e) => {
-                    e.stopPropagation(); // Prevent triggering loadConfig
-                    deleteConfig(index);
-                };
-                buttonsContainer.appendChild(deleteButton);
+        for (let i = startIndex; i < endIndex; i++) {
+            const config = filteredConfigs[i];
+            const li = document.createElement('li');
+            const domainName = document.createElement('span');
+            domainName.textContent = config.domain;
+            li.appendChild(domainName);
 
-                li.appendChild(buttonsContainer);
-                li.onclick = () => loadConfig(index);
-                domainList.appendChild(li);
+            const buttonsContainer = document.createElement('div');
+            buttonsContainer.classList.add('buttons-container');
+
+            const loadButton = document.createElement('button');
+            loadButton.textContent = "Load";
+            loadButton.classList.add('domainList-button', 'load');
+            loadButton.onclick = () => loadConfig(i);
+            buttonsContainer.appendChild(loadButton);
+
+            const deleteButton = document.createElement('button');
+            deleteButton.textContent = "Delete";
+            deleteButton.classList.add('domainList-button', 'delete');
+            deleteButton.onclick = (e) => {
+                e.stopPropagation(); // Prevent triggering loadConfig
+                deleteConfig(i);
+            };
+            buttonsContainer.appendChild(deleteButton);
+
+            li.appendChild(buttonsContainer);
+            li.onclick = () => loadConfig(i);
+            domainList.appendChild(li);
+        }
+
+        const paginationContainer = document.createElement('div');
+        paginationContainer.classList.add('pagination-container');
+
+        const prevButton = document.createElement('button');
+        prevButton.textContent = "<";
+        prevButton.disabled = searchPage === 0;
+        prevButton.onclick = () => {
+            if (searchPage > 0) {
+                searchPage--;
+                displaySearchResults(); 
             }
-        });
+        };
+        paginationContainer.appendChild(prevButton);
+
+        const nextButton = document.createElement('button');
+        nextButton.textContent = ">";
+        nextButton.disabled = endIndex >= filteredConfigs.length;
+        nextButton.onclick = () => {
+            if (endIndex < filteredConfigs.length) {
+                searchPage++;
+                displaySearchResults(); 
+            }
+        };
+        paginationContainer.appendChild(nextButton);
+
+        domainList.appendChild(paginationContainer);
     });
 });
+function displaySearchResults() {
+    const event = new Event('input');
+    document.getElementById('searchInput').dispatchEvent(event);
+}
 
 // User function: Generates the initial JSON structure
 function userFunction(domain, username, name, customString, month, year, passwordLength, charSet, enforceCharTypes) {
@@ -384,4 +470,65 @@ async function generatePassword() {
         console.error(error.message);
         alert(error.message);
     }
+}
+
+// Encrypt Data
+async function encryptData(data, masterPassword) {
+    const encoder = new TextEncoder();
+    const masterPasswordHash = await crypto.subtle.digest('SHA-256', encoder.encode(masterPassword));
+    const halfHash = masterPasswordHash.slice(0, masterPasswordHash.byteLength / 2);
+
+    const iv = crypto.getRandomValues(new Uint8Array(12)); // Initialization vector
+    const key = await crypto.subtle.importKey(
+        'raw',
+        halfHash,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt']
+    );
+
+    const encryptedData = await crypto.subtle.encrypt(
+        {
+            name: 'AES-GCM',
+            iv: iv
+        },
+        key,
+        encoder.encode(data)
+    );
+
+    const combined = new Uint8Array(iv.byteLength + encryptedData.byteLength);
+    combined.set(iv);
+    combined.set(new Uint8Array(encryptedData), iv.byteLength);
+
+    return btoa(String.fromCharCode(...combined)); // Convert to base64 for storage
+}
+
+// Decrypt Data
+async function decryptData(data, masterPassword) {
+    const combined = new Uint8Array(atob(data).split("").map(c => c.charCodeAt(0)));
+    const iv = combined.slice(0, 12);
+    const encryptedData = combined.slice(12);
+
+    const encoder = new TextEncoder();
+    const masterPasswordHash = await crypto.subtle.digest('SHA-256', encoder.encode(masterPassword));
+    const halfHash = masterPasswordHash.slice(0, masterPasswordHash.byteLength / 2);
+
+    const key = await crypto.subtle.importKey(
+        'raw',
+        halfHash,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['decrypt']
+    );
+
+    const decryptedData = await crypto.subtle.decrypt(
+        {
+            name: 'AES-GCM',
+            iv: iv
+        },
+        key,
+        encryptedData
+    );
+
+    return new TextDecoder().decode(decryptedData);
 }

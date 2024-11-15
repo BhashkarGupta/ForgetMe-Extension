@@ -135,65 +135,21 @@ function saveSiteConfiguration(userJson) {
     });
 }
 
-// Encrypt Data
-async function encryptData(data, masterPassword) {
-    const encoder = new TextEncoder();
-    const masterPasswordHash = await crypto.subtle.digest('SHA-256', encoder.encode(masterPassword));
-    const halfHash = masterPasswordHash.slice(0, masterPasswordHash.byteLength / 2);
-
-    const iv = crypto.getRandomValues(new Uint8Array(12)); // Initialization vector
-    const key = await crypto.subtle.importKey(
-        'raw',
-        halfHash,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['encrypt']
-    );
-
-    const encryptedData = await crypto.subtle.encrypt(
-        {
-            name: 'AES-GCM',
-            iv: iv
-        },
-        key,
-        encoder.encode(data)
-    );
-
-    const combined = new Uint8Array(iv.byteLength + encryptedData.byteLength);
-    combined.set(iv);
-    combined.set(new Uint8Array(encryptedData), iv.byteLength);
-
-    return btoa(String.fromCharCode(...combined)); // Convert to base64 for storage
+// Function to fetch stored configurations from chrome.storage.local
+function getConfigsFromStorage(callback) {
+    chrome.storage.local.get('configs', (result) => {
+        const existingConfigs = result.configs || [];
+        callback(existingConfigs);
+    });
 }
 
-// Decrypt Data
-async function decryptData(data, masterPassword) {
-    const combined = new Uint8Array(atob(data).split("").map(c => c.charCodeAt(0)));
-    const iv = combined.slice(0, 12);
-    const encryptedData = combined.slice(12);
-
-    const encoder = new TextEncoder();
-    const masterPasswordHash = await crypto.subtle.digest('SHA-256', encoder.encode(masterPassword));
-    const halfHash = masterPasswordHash.slice(0, masterPasswordHash.byteLength / 2);
-
-    const key = await crypto.subtle.importKey(
-        'raw',
-        halfHash,
-        { name: 'AES-GCM', length: 256 },
-        false,
-        ['decrypt']
-    );
-
-    const decryptedData = await crypto.subtle.decrypt(
-        {
-            name: 'AES-GCM',
-            iv: iv
-        },
-        key,
-        encryptedData
-    );
-
-    return new TextDecoder().decode(decryptedData);
+// Function to save configurations to chrome.storage.local
+function saveConfigsToStorage(configs, callback) {
+    chrome.storage.local.set({ configs: configs }, () => {
+        if (callback) {
+            callback(); // Optionally run a callback after saving
+        }
+    });
 }
 
 // chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -239,12 +195,21 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
                 sendResponse({ error: error.message });
             });
         return true;
-
+    } else if (message.action === 'getConfigs') {
+        getConfigsFromStorage((configs) => {
+            sendResponse({ configs: configs });
+        });
+        return true;
+    } else if (message.action === 'saveConfigs') {
+        console.log('saved config requested');
+        saveConfigsToStorage(message.configs, () => {
+            sendResponse({ success: true });
+        });
     } else if (message.action === 'saveSiteConfiguration') {
         const { userJson } = message;
         try {
             saveSiteConfiguration(userJson);
-            sendResponse({});
+            sendResponse({success: true});
         } catch (error) {
             console.error("Error saving configuration:", error);
             sendResponse({ error: error.message });

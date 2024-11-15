@@ -41,6 +41,10 @@ body.dark-mode {
   margin-bottom: 10px;
 }
 
+.header > h2 {
+  color: #4A90E2;
+}
+
 h2 {
   text-align: right;
   margin-bottom: 5px;
@@ -283,7 +287,7 @@ ol>li {
   padding: 20px;
   border: 2px solid #54bb35;
   min-width: 300px;
-  max-width: 550px;
+  max-width: 430px;
   border-radius: 8px;
   color: #444;
 }
@@ -339,6 +343,7 @@ ol>li {
 
 #domainList li:hover {
   background-color: #f1f1f1;
+  color: #333;
 }
 
 #domainList li span {
@@ -427,6 +432,20 @@ ol>li {
   transition: opacity 0.3s ease;
 }
 
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+}
+
+.pagination-container > button {
+  border-radius: 80%;
+  height: 30px;
+  max-width: 30px;
+  font-weight: bolder;
+  min-width: 0;
+  padding: 0%;
+}
+
 
 @media (max-width: 600px) {
   body {
@@ -477,6 +496,13 @@ ol>li {
   #domainList li {
       flex-direction: column;
       align-items: flex-start;
+  }
+
+  li > span {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 0.5rem;
   }
 
   .buttons-container {
