@@ -1,15 +1,120 @@
-// Wait for the DOM to load
 console.log('content.js triggered');
 
-window.onload = function(){
-    const usernameField = document.querySelector('input[name="username"], input[type="email"], input[type="text"]');
-    const passwordField = document.querySelector('input[name="password"], input[type="password"]');
-    console.log('listening for events');
-    if (usernameField || passwordField) {
-        console.log('login page detected');
-        addIconToInputFields();
-    }
+// Poll the DOM periodically to check if the username and password fields are available
+function startPolling() {
+    const pollingInterval = 500; 
+    const maxAttempts = 10; 
+    let attemptCount = 0;
+
+    const checkFieldsInterval = setInterval(function() {
+        const usernameField = document.querySelector('input[name="username"], input[type="email"], input[type="text"]');
+        const passwordField = document.querySelector('input[name="password"], input[type="password"]');
+        
+        if (usernameField && passwordField) {
+            // Both fields are found, stop polling
+            console.log('Login form detected');
+            addIconToInputFields(); // Add icon when fields are detected
+            clearInterval(checkFieldsInterval); // Stop polling once fields are detected
+        }
+        
+        attemptCount++;
+        if (attemptCount >= maxAttempts) {
+            // Stop polling after reaching the maximum attempts
+            console.log('Max attempts reached without detecting login fields');
+            clearInterval(checkFieldsInterval); // Stop polling to avoid unnecessary checks
+        }
+    }, pollingInterval);
 }
+
+startPolling();
+
+function addIconToInputFields() {
+    const buttonHtml = `
+        <button type="button" class="password-generator-btn" style="
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            z-index: 10;
+        " title="Generate Password">
+            🔑
+        </button>
+    `;
+
+    const inputs = document.querySelectorAll('input[type="password"], input[type="text"], input[type="email"]');
+
+    inputs.forEach(input => {
+        // Check if the input is visible
+        if (isElementVisible(input)) {
+            // Create a container element to hold the input and the button
+            const wrapper = document.createElement('div');
+            wrapper.style.position = 'relative';
+            wrapper.style.display = 'inline-block';
+
+            // Insert the wrapper before the input in the DOM
+            input.parentNode.insertBefore(wrapper, input);
+            wrapper.appendChild(input); // Move the input into the wrapper
+
+            // Insert the button into the wrapper
+            const button = document.createElement('div');
+            button.innerHTML = buttonHtml;
+            wrapper.appendChild(button);
+
+            // Add click event listener to the button
+            button.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                fillPassword();
+            });
+
+            // Only show the icon after user interaction with the input
+            input.addEventListener('focus', () => {
+                button.style.display = 'block'; // Show the icon when the field is focused
+            });
+
+            input.addEventListener('blur', () => {
+                button.style.display = 'none'; // Hide the icon when focus is lost
+            });
+        }
+    });
+}
+
+function isElementVisible(element) {
+    // Check if the element is visible (not hidden or display:none)
+    const style = window.getComputedStyle(element);
+    
+    // Check if the element is not hidden
+    if (style.display === 'none' || style.visibility === 'hidden') {
+        return false;
+    }
+
+    // Check if the element is in the viewport (not off-screen)
+    const rect = element.getBoundingClientRect();
+    if (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) {
+        return true;
+    }
+    
+    // Additional check for elements with "moveOffScreen" class or similar off-screen properties
+    if (style.position === 'fixed' || style.transform) {
+        const transformMatrix = style.transform.match(/matrix.*\((.+)\)/);
+        if (transformMatrix) {
+            const transformValues = transformMatrix[1].split(',').map(val => parseFloat(val));
+            const translateX = transformValues[4] || 0;
+            const translateY = transformValues[5] || 0;
+            if (translateX || translateY) {
+                return false; // The element is visually off-screen
+            }
+        }
+    }
+
+    return element.offsetHeight > 0 && element.offsetWidth > 0;
+}
+
 
 function fillPassword() {
     chrome.runtime.sendMessage({ action: 'getConfigs' }, async function (response) {
@@ -77,24 +182,6 @@ function fillPassword() {
 
             const password = response.password;
             return password;
-
-            // saving site configuration
-            // await new Promise((resolve, reject) => {
-            //     chrome.runtime.sendMessage(
-            //         {
-            //             action: 'saveSiteConfiguration',
-            //             userJson: userJson
-            //         },
-            //         (result) => {
-            //             if (chrome.runtime.lastError) {
-            //                 reject(chrome.runtime.lastError);
-            //             } else {
-            //                 resolve(result);
-            //             }
-            //         }
-            //     );
-            // });
-
         } catch (error) {
             console.error(error.message);
             alert(error.message);
@@ -192,46 +279,3 @@ function fillPassword() {
     }
 }
 
-function addIconToInputFields() {
-    const buttonHtml = `
-        <button class="password-generator-btn" style="
-            position: absolute;
-            right: 10px;
-            top: 50%;
-            transform: translateY(-50%);
-            background-color: transparent;
-            border: none;
-            cursor: pointer;
-            font-size: 16px;
-            color: #666;
-            z-index: 10;
-        " title="Generate Password">
-            🔑
-        </button>
-    `;
-
-    const inputs = document.querySelectorAll('input[type="password"], input[type="text"], input[type="email"]');
-
-    inputs.forEach(input => {
-        // Create a container element to hold the input and the button
-        const wrapper = document.createElement('div');
-        wrapper.style.position = 'relative';
-        wrapper.style.display = 'inline-block';
-
-        // Insert the wrapper before the input in the DOM
-        input.parentNode.insertBefore(wrapper, input);
-        wrapper.appendChild(input); // Move the input into the wrapper
-
-        // Insert the button into the wrapper
-        const button = document.createElement('div');
-        button.innerHTML = buttonHtml;
-        wrapper.appendChild(button);
-
-        // Add click event listener to the button
-        button.addEventListener('click', () => {
-            event.preventDefault();
-            event.stopPropagation();
-            fillPassword();
-        });
-    });
-}
