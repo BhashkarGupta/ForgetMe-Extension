@@ -1,32 +1,26 @@
 console.log('content.js triggered');
 
-// Poll the DOM periodically to check if the username and password fields are available
-function startPolling() {
-    const pollingInterval = 500; 
-    const maxAttempts = 10; 
-    let attemptCount = 0;
-
-    const checkFieldsInterval = setInterval(function() {
-        const usernameField = document.querySelector('input[name="username"], input[type="email"], input[type="text"]');
-        const passwordField = document.querySelector('input[name="password"], input[type="password"]');
-        
-        if (usernameField && passwordField) {
-            // Both fields are found, stop polling
-            console.log('Login form detected');
-            addIconToInputFields(); // Add icon when fields are detected
-            clearInterval(checkFieldsInterval); // Stop polling once fields are detected
+function detectInputClick(event) {
+    const input = event.target;
+    if (
+        input.tagName.toLowerCase() === 'input' && 
+        (
+            input.name === 'username' || 
+            input.type === 'email' || 
+            input.type === 'text' || 
+            input.name === 'password' || 
+            input.type === 'password'
+        )
+    ) {
+        const buttonHtml = input.parentElement.querySelector('.password-generator-btn');
+        if (!buttonHtml){
+            console.log('Valid input field clicked:', input);
+            addIconToInputFields();
         }
-        
-        attemptCount++;
-        if (attemptCount >= maxAttempts) {
-            // Stop polling after reaching the maximum attempts
-            console.log('Max attempts reached without detecting login fields');
-            clearInterval(checkFieldsInterval); // Stop polling to avoid unnecessary checks
-        }
-    }, pollingInterval);
+    }
 }
+document.addEventListener('click', detectInputClick);
 
-startPolling();
 
 function addIconToInputFields() {
     const buttonHtml = `
@@ -38,23 +32,30 @@ function addIconToInputFields() {
             background-color: transparent;
             border: none;
             cursor: pointer;
-            font-size: 16px;
-            color: #666;
+            font-size: 18px; 
+            color: #333;
             z-index: 10;
+            padding: 0;
+            margin: 0;
+            width: 24px; 
+            height: 24px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            user-select: none; /* Prevents text selection */
         " title="Generate Password">
-            🔑
+            🛡️
         </button>
     `;
 
     const inputs = document.querySelectorAll('input[type="password"], input[type="text"], input[type="email"]');
 
     inputs.forEach(input => {
-        // Check if the input is visible
         if (isElementVisible(input)) {
-            // Create a container element to hold the input and the button
             const wrapper = document.createElement('div');
             wrapper.style.position = 'relative';
             wrapper.style.display = 'inline-block';
+            wrapper.style.width = '100%'; // Ensure the wrapper spans the full width
 
             // Insert the wrapper before the input in the DOM
             input.parentNode.insertBefore(wrapper, input);
@@ -65,7 +66,16 @@ function addIconToInputFields() {
             button.innerHTML = buttonHtml;
             wrapper.appendChild(button);
 
-            // Add click event listener to the button
+            input.style.position = 'relative';
+            input.style.paddingRight = '40px';
+            input.style.width = '100%'; 
+            input.style.fontSize = '16px'; 
+            input.style.lineHeight = '1.5'; 
+            input.style.padding = '8px 12px'; 
+            input.style.boxSizing = 'border-box'; 
+            input.style.minHeight = '36px'; 
+            input.style.maxHeight = '48px'; 
+
             button.addEventListener('click', (event) => {
                 event.preventDefault();
                 event.stopPropagation();
@@ -84,36 +94,44 @@ function addIconToInputFields() {
     });
 }
 
-function isElementVisible(element) {
-    // Check if the element is visible (not hidden or display:none)
-    const style = window.getComputedStyle(element);
-    
-    // Check if the element is not hidden
-    if (style.display === 'none' || style.visibility === 'hidden') {
-        return false;
-    }
 
-    // Check if the element is in the viewport (not off-screen)
-    const rect = element.getBoundingClientRect();
-    if (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) {
-        return true;
-    }
-    
-    // Additional check for elements with "moveOffScreen" class or similar off-screen properties
-    if (style.position === 'fixed' || style.transform) {
-        const transformMatrix = style.transform.match(/matrix.*\((.+)\)/);
-        if (transformMatrix) {
-            const transformValues = transformMatrix[1].split(',').map(val => parseFloat(val));
-            const translateX = transformValues[4] || 0;
-            const translateY = transformValues[5] || 0;
-            if (translateX || translateY) {
-                return false; // The element is visually off-screen
-            }
-        }
-    }
-
-    return element.offsetHeight > 0 && element.offsetWidth > 0;
+// Helper function to check visibility
+function isElementVisible(el) {
+    const style = window.getComputedStyle(el);
+    return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0 && el.offsetHeight > 0;
 }
+
+
+// function isElementVisible(element) {
+//     // Check if the element is visible (not hidden or display:none)
+//     const style = window.getComputedStyle(element);
+    
+//     // Check if the element is not hidden
+//     if (style.display === 'none' || style.visibility === 'hidden') {
+//         return false;
+//     }
+
+//     // Check if the element is in the viewport (not off-screen)
+//     const rect = element.getBoundingClientRect();
+//     if (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) {
+//         return true;
+//     }
+    
+//     // Additional check for elements with "moveOffScreen" class or similar off-screen properties
+//     if (style.position === 'fixed' || style.transform) {
+//         const transformMatrix = style.transform.match(/matrix.*\((.+)\)/);
+//         if (transformMatrix) {
+//             const transformValues = transformMatrix[1].split(',').map(val => parseFloat(val));
+//             const translateX = transformValues[4] || 0;
+//             const translateY = transformValues[5] || 0;
+//             if (translateX || translateY) {
+//                 return false; // The element is visually off-screen
+//             }
+//         }
+//     }
+
+//     return element.offsetHeight > 0 && element.offsetWidth > 0;
+// }
 
 
 function fillPassword() {
