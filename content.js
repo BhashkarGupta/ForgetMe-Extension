@@ -52,7 +52,6 @@ function detectInputClick(event) {
         const passwordManagerScreen = document.querySelector('.fmpm');
         if (!passwordManagerScreen) {
             if (!passwordManagerButton){
-                console.log('triggered');
                 addIconToInputFields();
             }
         }

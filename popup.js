@@ -8,12 +8,10 @@ const customizeOptions = document.getElementById('customizeOptions');
 const generatedPassword = document.getElementById('generatedPassword');
 
 chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    const tabId = tabs[0].id;  // Get the active tab ID
-  
+    const tabId = tabs[0].id; 
     chrome.tabs.sendMessage(tabId, { action: 'getDomain' }, (response) => {
       if (response && response.domain) {
         const currentDomain = response.domain;
-        console.log('Received domain in popup.js:', currentDomain);
         document.getElementById('domain').value = currentDomain;  
       }
     });
@@ -174,7 +172,6 @@ async function uploadConfig(masterPassword) {
     const file = fileInput.files[0];  // Get the first file selected by the user
 
     if (!file) {
-        console.log("No file selected");
         return;
     }
 
@@ -182,8 +179,6 @@ async function uploadConfig(masterPassword) {
     const reader = new FileReader();
     reader.onload = async function (e) {
         const encryptedData = e.target.result;
-        console.log("password:", masterPassword);
-        console.log(encryptedData);
         const decryptedData = await decryptData(encryptedData, masterPassword);
         async function update(existingConfigs) {
             await chrome.runtime.sendMessage({ action: 'saveConfigs', configs:existingConfigs });
@@ -270,7 +265,6 @@ function displaySavedDomains() {
 
 
 function deleteConfig(index) {
-    console.log("delete Triggered");
     chrome.runtime.sendMessage({action: 'getConfigs'}, (response) => {
         const existingConfigs = response.configs || [];
         existingConfigs.splice(index, 1);

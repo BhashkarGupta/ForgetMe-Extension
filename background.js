@@ -1,13 +1,3 @@
-// Store a password in chrome.storage
-// async function storePassword(domain, username, passwordData) {
-//     const passwords = await getPasswords();
-//     passwords[domain] = {
-//         username: username,
-//         password: passwordData
-//     };
-//     await chrome.storage.local.set({ passwords });
-// }
-
 // Retrieve a password from chrome.storage
 async function getPassword(domain) {
     const passwords = await getPasswords();
@@ -110,18 +100,13 @@ async function generatePasswordFromHash(masterPassword, finalJson) {
             password = password.substring(0, position) + character + password.substring(position + 1);
         }
     }
-    console.log(password);
     return password;
 }
 
 function saveSiteConfiguration(userJson) {
-    // console.log(userJson);
     chrome.storage.local.get(['configs'], (result) => {
         const existingConfigs = result.configs || [];
-        // console.log(existingConfigs);
         const userJsonString = JSON.stringify(userJson);
-        console.log(userJsonString);
-        console.log(JSON.stringify(existingConfigs));
         const configExists = existingConfigs.some(config => JSON.stringify(config) === userJsonString);
 
         if (configExists) {
@@ -151,36 +136,6 @@ function saveConfigsToStorage(configs, callback) {
         }
     });
 }
-
-// chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-//     const handleAsyncMessage = async () => {
-//         try {
-//             if (message.action === 'generatePasswordFromHash') {
-//                 const { masterPassword, userJson } = message;
-//                 const password = await generatePasswordFromHash(masterPassword, generateUserString(userJson));
-//                 sendResponse({ password });
-
-//             } else if (message.action === 'saveSiteConfiguration') {
-//                 const { userJson } = message;
-//                 saveSiteConfiguration(userJson);
-//                 // Sending an empty response to indicate success
-//                 sendResponse({});
-//             }
-//         } catch (error) {
-//             console.error("Error handling the message:", error);
-//             sendResponse({ error: error.message });
-//         }
-//     };
-
-//     // Calling the async function and return the Promise to keep the message channel open
-//     handleAsyncMessage().catch((error) => {
-//         console.error("Error with async handling:", error);
-//         sendResponse({ error: error.message });
-//     });
-
-//     // Returning true to keep the message channel open for async task
-//     return true;
-// });
 
 // Listen for messages from popup.js
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
