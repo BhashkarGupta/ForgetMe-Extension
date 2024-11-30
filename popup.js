@@ -7,8 +7,19 @@ const customizeOptionsToggle = document.getElementById('customizeOptionsToggle')
 const customizeOptions = document.getElementById('customizeOptions');
 const generatedPassword = document.getElementById('generatedPassword');
 
-// Event listeners
+chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const tabId = tabs[0].id;  // Get the active tab ID
+  
+    chrome.tabs.sendMessage(tabId, { action: 'getDomain' }, (response) => {
+      if (response && response.domain) {
+        const currentDomain = response.domain;
+        console.log('Received domain in popup.js:', currentDomain);
+        document.getElementById('domain').value = currentDomain;  
+      }
+    });
+});
 
+// Event listeners
 document.getElementById('masterPassword').addEventListener('input', (event) => {
     updatePasswordStrength(event.target.value);
 });

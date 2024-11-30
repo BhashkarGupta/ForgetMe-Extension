@@ -1,4 +1,40 @@
-console.log('content.js triggered');
+const currentUrl = window.location.hostname;
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    if (message.action === 'getDomain') {
+      console.log('Content script sending domain:', currentUrl);
+      sendResponse({ domain: currentUrl }); 
+      return true;
+    }
+});
+  
+async function ifExists() {
+    return new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action: 'getConfigs' }, function (response) {
+            let matchedConfig = { config: null, exists: false };
+            if (response && response.configs) {
+                const savedConfigs = response.configs;
+                matchedConfig = savedConfigs.find(config => {
+                    return currentUrl.includes(config.domain);
+                });
+            }
+            if (matchedConfig) {
+                resolve({ config: matchedConfig, exists: true });
+            } else {
+                resolve({ config: null, exists: false });
+            }
+        });
+    });
+}
+
+const currentDomain = ifExists();
+currentDomain.then(res => {
+    if (res.exists) {
+        document.addEventListener('click', detectInputClick);
+    }
+}).catch(err => {
+    console.error("Error fetching config:", err);
+});
+
 
 function detectInputClick(event) {
     const input = event.target;
@@ -12,15 +48,16 @@ function detectInputClick(event) {
             input.type === 'password'
         )
     ) {
-        const buttonHtml = input.parentElement.querySelector('.password-generator-btn');
-        if (!buttonHtml){
-            console.log('Valid input field clicked:', input);
-            addIconToInputFields();
+        const passwordManagerButton = document.querySelector('.password-generator-btn');
+        const passwordManagerScreen = document.querySelector('.fmpm');
+        if (!passwordManagerScreen) {
+            if (!passwordManagerButton){
+                console.log('triggered');
+                addIconToInputFields();
+            }
         }
     }
 }
-document.addEventListener('click', detectInputClick);
-
 
 function addIconToInputFields() {
     const buttonHtml = `
@@ -57,11 +94,11 @@ function addIconToInputFields() {
             wrapper.style.display = 'inline-block';
             wrapper.style.width = '100%'; // Ensure the wrapper spans the full width
 
-            // Insert the wrapper before the input in the DOM
+            // Inserting the wrapper before the input in the DOM
             input.parentNode.insertBefore(wrapper, input);
-            wrapper.appendChild(input); // Move the input into the wrapper
+            wrapper.appendChild(input); // Moveing the input into the wrapper
 
-            // Insert the button into the wrapper
+            // Inserting the button into the wrapper
             const button = document.createElement('div');
             button.innerHTML = buttonHtml;
             wrapper.appendChild(button);
@@ -84,71 +121,25 @@ function addIconToInputFields() {
 
             // Only show the icon after user interaction with the input
             input.addEventListener('focus', () => {
-                button.style.display = 'block'; // Show the icon when the field is focused
+                button.style.display = 'block'; 
             });
 
-            input.addEventListener('blur', () => {
-                button.style.display = 'none'; // Hide the icon when focus is lost
-            });
+            // input.addEventListener('blur', () => {
+            //     button.style.display = 'none';
+            // });
         }
     });
 }
 
-
-// Helper function to check visibility
 function isElementVisible(el) {
     const style = window.getComputedStyle(el);
     return style.display !== 'none' && style.visibility !== 'hidden' && el.offsetWidth > 0 && el.offsetHeight > 0;
 }
 
-
-// function isElementVisible(element) {
-//     // Check if the element is visible (not hidden or display:none)
-//     const style = window.getComputedStyle(element);
-    
-//     // Check if the element is not hidden
-//     if (style.display === 'none' || style.visibility === 'hidden') {
-//         return false;
-//     }
-
-//     // Check if the element is in the viewport (not off-screen)
-//     const rect = element.getBoundingClientRect();
-//     if (rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth) {
-//         return true;
-//     }
-    
-//     // Additional check for elements with "moveOffScreen" class or similar off-screen properties
-//     if (style.position === 'fixed' || style.transform) {
-//         const transformMatrix = style.transform.match(/matrix.*\((.+)\)/);
-//         if (transformMatrix) {
-//             const transformValues = transformMatrix[1].split(',').map(val => parseFloat(val));
-//             const translateX = transformValues[4] || 0;
-//             const translateY = transformValues[5] || 0;
-//             if (translateX || translateY) {
-//                 return false; // The element is visually off-screen
-//             }
-//         }
-//     }
-
-//     return element.offsetHeight > 0 && element.offsetWidth > 0;
-// }
-
-
 function fillPassword() {
-    chrome.runtime.sendMessage({ action: 'getConfigs' }, async function (response) {
-        if (response && response.configs) {
-            const savedConfigs = response.configs;
-            const currentUrl = window.location.hostname;
-            const matchedConfig = savedConfigs.find(config => {
-                return currentUrl.includes(config.domain);
-            });
-
-            if (matchedConfig) {
-                getPassword(matchedConfig);
-            }
-        }
-    });
-    console.log('fillPasswordTriggered');
+    currentDomain.then(res => {
+        getPassword(res.config);
+    })
 
     async function autofillLoginForm(userName, password) {
         const usernameField = document.querySelector('input[name="username"], input[type="email"], input[type="text"]');
@@ -157,6 +148,9 @@ function fillPassword() {
         if (usernameField || passwordField) {
             usernameField.value = userName || '';
             passwordField.value = password;
+
+            usernameField.dispatchEvent(new Event('input', { bubbles: true }));
+            passwordField.dispatchEvent(new Event('input', { bubbles: true }));
         } else {
             console.log('No username/password fields found.');
         }
@@ -237,14 +231,15 @@ function fillPassword() {
 
     // Function to create and display a password modal
     async function getPassword(config) {
-        // Create modal elements
+        // Creating modal elements
         const modal = document.createElement('div');
         const modalContent = document.createElement('div');
         const modalHeader = document.createElement('h2');
         const passwordInput = document.createElement('input');
         const submitButton = document.createElement('button');
+        modal.classList.add('fmpm');
 
-        // Style the modal (optional)
+        // Style the modal
         modal.style.position = 'fixed';
         modal.style.top = '0';
         modal.style.left = '0';
@@ -277,13 +272,13 @@ function fillPassword() {
         submitButton.style.cursor = 'pointer';
         submitButton.style.borderRadius = '5px';
 
-        // Append elements to the modal
+        // Appending elements to the modal
         modalContent.appendChild(modalHeader);
         modalContent.appendChild(passwordInput);
         modalContent.appendChild(submitButton);
         modal.appendChild(modalContent);
 
-        // Add the modal to the document body
+        // Adding the modal to the document body
         document.body.appendChild(modal);
 
         // Handle submit button click
